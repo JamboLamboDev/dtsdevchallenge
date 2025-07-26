@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Task Status</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .form-container {
+            margin-top: 50px;
+            max-width: 500px;
+        }
+        .form-container input, .form-container select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .form-container button {
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="window.location.href='view-tasks.html'">Back to Tasks</button>
+    <h1>Update Task Status</h1>
+
+    <div class="form-container">
+        <form id="updateForm">
+            <label>Task Title</label>
+            <input type="text" id="title" disabled />
+
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+                <option value="">-- Select Status --</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+            </select>
+            <button type="submit">Update Status</button>
+        </form>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('id');
+
+        if (!taskId) {
+            alert("No task ID provided.");
+            window.location.href = "view-tasks.html";
+        }
+
+        async function loadTask(id) {
+            const res = await fetch("/dts/Backend/API/gettaskbyid.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            });
+
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+                window.location.href = "view-tasks.html";
+                return;
+            }
+
+            document.getElementById("title").value = data.title;
+            document.getElementById("status").value = data.status;
+        }
+
+        document.getElementById("updateForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const res = await fetch("/dts/Backend/API/update.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: taskId,
+                    status: document.getElementById("status").value
+                })
+            });
+
+            const result = await res.json();
+            if (result.error) {
+                alert("Error: " + result.error);
+            } else {
+                alert("Status updated successfully.");
+                window.location.href = "view-tasks.html";
+            }
+        });
+
+        // Load task on page load
+        loadTask(taskId);
+    </script>
+</body>
+</html>

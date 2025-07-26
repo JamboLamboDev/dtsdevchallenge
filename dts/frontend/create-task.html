@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Task</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button className=kkk onclick="window.location.href='index.html'">Back</button>
+    <h1>Add a new task!</h1>
+    <form id="taskForm">
+        <input type="text" name="title" placeholder="Task Title" required />
+        <textarea name="description" placeholder="Description"></textarea>
+        <select name="status" required>
+            <option value="pending" selected>Pending</option>
+            <option value="in progress">In Progress</option>
+            <option value="complete">Completed</option>
+        </select>
+        <input type="datetime-local" name="deadline" required />
+        <button type="submit">Add Task</button>
+    </form>
+    <script>
+      document.getElementById("taskForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const taskData = {
+          title: formData.get("title"),
+          description: formData.get("description"),
+          status: formData.get("status"),
+          deadline: formData.get("deadline").replace("T", " ") + ":00"
+        };
+        try {
+          const response = await fetch("/dts/Backend/API/insert.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(taskData)
+          });
+          const result = await response.json();
+          if (response.ok) {
+            alert("Task created!");
+            e.target.reset();
+          } else {
+            alert("Error: " + result.message);
+          }
+        } catch (error) {
+          alert("Network error: " + error.message);
+        }
+      });
+    </script>
+</body>
+</html>

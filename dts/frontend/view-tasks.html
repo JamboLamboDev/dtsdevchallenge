@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View Tasks</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        
+        .task-list {
+            margin-top: 60px;
+        }
+        .filter-form {
+            margin-bottom: 20px;
+        }
+        .action-links a {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="window.location.href='index.html'">Back</button>
+    <h1>All Tasks</h1>
+    <form class="filter-form" id="filterForm">
+        <input type="number" name="taskId" id="taskId" placeholder="Filter by Task ID" min="1" />
+        <button type="submit">Filter</button>
+        <button type="button" id="clearFilter">Clear</button>
+    </form>
+    <div id="tasks" class="task-list"></div>
+
+    <script>
+    async function fetchTasks(id = null) {
+        let url = "/dts/Backend/API/getalltasks.php";
+        let options = {};
+        if (id) {
+            url = "/dts/Backend/API/gettaskbyid.php";
+            options = {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            };
+        }
+        const res = await fetch(url, options);
+        const data = await res.json();
+        return id ? (data.error ? [] : [data]) : data;
+    }
+
+    function renderTasks(tasks) {
+        const container = document.getElementById("tasks");
+        if (!tasks.length) {
+            container.innerHTML = "<p>No tasks found.</p>";
+            return;
+        }
+        container.innerHTML = tasks.map(task => `
+            <div class="task-card">
+                <p><strong>ID:</strong> ${task.id}</p>
+                <h3>${task.title}</h3>
+                <span class="status-badge status-${task.status.replace(/\s/g,'-').toLowerCase()}">${task.status}</span>
+                <p>${task.description || ""}</p>
+                <p><strong>Deadline:</strong> ${task.deadline}</p>
+                <div class="action-links">
+                    <a href="update-task.html?id=${task.id}">Update</a>
+                    <a href="#" onclick="deleteTask(${task.id});return false;" style="color:red;">Delete</a>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    async function loadAllTasks() {
+        const tasks = await fetchTasks();
+        renderTasks(tasks);
+    }
+
+    document.getElementById("filterForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const id = document.getElementById("taskId").value;
+        if (id) {
+            const tasks = await fetchTasks(id);
+            renderTasks(tasks);
+        } else {
+            loadAllTasks();
+        }
+    });
+
+    document.getElementById("clearFilter").addEventListener("click", function() {
+        document.getElementById("taskId").value = "";
+        loadAllTasks();
+    });
+
+    async function deleteTask(id) {
+        if (!confirm("Are you sure you want to delete this task?")) return;
+        const res = await fetch("/dts/Backend/API/delete.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: id })
+        })
+        
+        const result = await res.json();
+        alert(result.message || result.error);
+        loadAllTasks();
+    }
+
+    // Initial load
+    loadAllTasks();
+    </script>
+</body>
+</html>
